@@ -33,11 +33,12 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
   def decode(data)
 
     @lines.decode(data) do |event|
+      message = event["message"]
       begin
-        yield LogStash::Event.new(LogStash::Json.load(event["message"]))
+        yield LogStash::Event.new(LogStash::Json.load(message)) unless message.nil? || message.empty?
       rescue LogStash::Json::ParserError => e
         @logger.info("JSON parse failure. Falling back to plain-text", :error => e, :data => data)
-        yield LogStash::Event.new("message" => event["message"], "tags" => "_jsonparsefailure")
+        yield LogStash::Event.new("message" => message, "tags" => "_jsonparsefailure")
       end
     end
   end # def decode
