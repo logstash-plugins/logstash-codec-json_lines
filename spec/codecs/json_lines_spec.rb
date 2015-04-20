@@ -32,6 +32,14 @@ describe LogStash::Codecs::JSONLines do
       end
     end
 
+    it "should ignore blank lines" do
+      decoded = false
+      subject.decode("\n") do |event|
+        decoded = true
+      end
+      insist { decoded } == false
+    end
+
     context "processing plain text" do
       it "falls back to plain text" do
         decoded = false
