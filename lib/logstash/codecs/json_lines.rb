@@ -21,7 +21,8 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
   #
   # For nxlog users, you'll want to set this to `CP1252`
   config :charset, :validate => ::Encoding.name_list, :default => "UTF-8"
-
+  config :line_delimiter, :validate => :number
+  
   public
   def initialize(params={})
     super(params)
@@ -46,7 +47,11 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
   def encode(event)
     # Tack on a \n for now because previously most of logstash's JSON
     # outputs emitted one per line, and whitespace is OK in json.
-    @on_event.call(event, event.to_json + NL)
+    if @line_delimiter != nil
+      @on_event.call(event, event.to_json + @line_delimiter.chr)
+    else
+      @on_event.call(event, event.to_json + NL)
+    end 
   end # def encode
 
 end # class LogStash::Codecs::JSON
