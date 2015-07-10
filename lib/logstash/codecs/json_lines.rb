@@ -23,30 +23,34 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
   config :charset, :validate => ::Encoding.name_list, :default => "UTF-8"
 
   public
+
   def initialize(params={})
     super(params)
     @lines = LogStash::Codecs::Line.new
     @lines.charset = @charset
   end
 
-  public
   def decode(data)
-
     @lines.decode(data) do |event|
-      begin
-        yield LogStash::Event.new(LogStash::Json.load(event["message"]))
-      rescue LogStash::Json::ParserError => e
-        @logger.info("JSON parse failure. Falling back to plain-text", :error => e, :data => data)
-        yield LogStash::Event.new("message" => event["message"], "tags" => ["_jsonparsefailure"])
-      end
+      yield guard(event, data)
     end
   end # def decode
 
-  public
   def encode(event)
     # Tack on a \n for now because previously most of logstash's JSON
     # outputs emitted one per line, and whitespace is OK in json.
     @on_event.call(event, event.to_json + NL)
   end # def encode
+
+  private
+
+  def guard(event, data)
+    begin
+      LogStash::Event.new(LogStash::Json.load(event["message"]))
+    rescue LogStash::Json::ParserError => e
+      @logger.info("JSON parse failure. Falling back to plain-text", :error => e, :data => data)
+      LogStash::Event.new("message" => event["message"], "tags" => ["_jsonparsefailure"])
+    end
+  end
 
 end # class LogStash::Codecs::JSON
