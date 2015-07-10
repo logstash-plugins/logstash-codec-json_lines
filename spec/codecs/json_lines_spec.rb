@@ -101,4 +101,40 @@ describe LogStash::Codecs::JSONLines do
       insist { got_event }
     end
   end
+
+  context 'reading from a simulated multiline json file without last newline' do
+    let(:input) do
+      %{{"field": "value1"}
+{"field": "value2"}}
+    end
+
+    let(:collector) { Array.new }
+
+    it 'should generate one event' do
+      subject.decode(input) do |event|
+        collector.push(event)
+      end
+      expect(collector.size).to eq(1)
+      expect(collector.first['field']).to eq('value1')
+    end
+  end
+
+  context 'reading from a simulated multiline json file with last newline' do
+    let(:input) do
+      %{{"field": "value1"}
+{"field": "value2"}
+}
+    end
+
+    let(:collector) { Array.new }
+
+    it 'should generate two events' do
+      subject.decode(input) do |event|
+        collector.push(event)
+      end
+      expect(collector.size).to eq(2)
+      expect(collector.first['field']).to eq('value1')
+      expect(collector.last['field']).to eq('value2')
+    end
+  end
 end
