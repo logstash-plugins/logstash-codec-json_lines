@@ -82,12 +82,11 @@ describe LogStash::Codecs::JSONLines do
       end
 
     end
-
   end
 
   context "#encode" do
     it "should return json data" do
-      data = {"foo" => "bar", "baz" => {"bah" => ["a","b","c"]}}
+      data = {LogStash::Event::TIMESTAMP => "2015-12-07T11:37:00.000Z", "foo" => "bar", "baz" => {"bah" => ["a","b","c"]}}
       event = LogStash::Event.new(data)
       got_event = false
       subject.on_event do |e, d|
