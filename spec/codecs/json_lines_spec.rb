@@ -32,6 +32,23 @@ describe LogStash::Codecs::JSONLines do
       end
     end
 
+    context "when using custom delimiter" do
+      let(:delimiter) { "|" }
+      let(:line) { "{\"hey\":1}|{\"hey\":2}|{\"hey\":3}|" }
+      subject do
+        next LogStash::Codecs::JSONLines.new("delimiter" => delimiter)
+      end
+
+      it "should decode multiple lines separated by the delimiter" do
+        result = []
+        subject.decode(line) { |event| result << event }
+        expect(result.size).to eq(3)
+        expect(result[0]["hey"]).to eq(1)
+        expect(result[1]["hey"]).to eq(2)
+        expect(result[2]["hey"]).to eq(3)
+      end
+    end
+
     context "processing plain text" do
       it "falls back to plain text" do
         decoded = false
@@ -85,9 +102,10 @@ describe LogStash::Codecs::JSONLines do
   end
 
   context "#encode" do
+    let(:data) { { LogStash::Event::TIMESTAMP => "2015-12-07T11:37:00.000Z", "foo" => "bar", "baz" => {"bah" => ["a","b","c"]}} }
+    let(:event) { LogStash::Event.new(data) }
+
     it "should return json data" do
-      data = {LogStash::Event::TIMESTAMP => "2015-12-07T11:37:00.000Z", "foo" => "bar", "baz" => {"bah" => ["a","b","c"]}}
-      event = LogStash::Event.new(data)
       got_event = false
       subject.on_event do |e, d|
         insist { d } == "#{LogStash::Event.new(data).to_json}\n"
@@ -98,6 +116,20 @@ describe LogStash::Codecs::JSONLines do
       end
       subject.encode(event)
       insist { got_event }
+    end
+
+    context "when using custom delimiter" do
+      let(:delimiter) { "|" }
+      subject do
+        next LogStash::Codecs::JSONLines.new("delimiter" => delimiter)
+      end
+
+      it "should decode multiple lines separated by the delimiter" do
+        subject.on_event do |e, d|
+          insist { d } == "#{LogStash::Event.new(data).to_json}#{delimiter}"
+        end
+        subject.encode(event)
+      end
     end
   end
 

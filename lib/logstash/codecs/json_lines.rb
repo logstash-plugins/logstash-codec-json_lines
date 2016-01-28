@@ -4,7 +4,7 @@ require "logstash/codecs/line"
 require "logstash/json"
 
 # This codec will decode streamed JSON that is newline delimited.
-# Encoding will emit a single JSON string ending in a `\n`
+# Encoding will emit a single JSON string ending in a `@delimiter`
 # NOTE: Do not use this codec if your source input is line-oriented JSON, for
 # example, redis or file inputs. Rather, use the json codec.
 # More info: This codec is expecting to receive a stream (string) of newline
@@ -25,11 +25,14 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
   # For nxlog users, you'll want to set this to `CP1252`
   config :charset, :validate => ::Encoding.name_list, :default => "UTF-8"
 
+  # Change the delimiter that separates lines
+  config :delimiter, :validate => :string, :default => "\n"
+
   public
 
   def initialize(params={})
     super(params)
-    @lines = LogStash::Codecs::Line.new
+    @lines = LogStash::Codecs::Line.new("delimiter" => @delimiter)
     @lines.charset = @charset
   end
 
@@ -40,9 +43,9 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
   end # def decode
 
   def encode(event)
-    # Tack on a \n for now because previously most of logstash's JSON
+    # Tack on a @delimiter for now because previously most of logstash's JSON
     # outputs emitted one per line, and whitespace is OK in json.
-    @on_event.call(event, "#{event.to_json}#{NL}")
+    @on_event.call(event, "#{event.to_json}#{@delimiter}")
   end # def encode
 
   private
