@@ -1,3 +1,6 @@
+## 2.0.4
+ - Support for customizable delimiter
+
 ## 2.0.3
  - Fixed Timestamp check in specs
 
