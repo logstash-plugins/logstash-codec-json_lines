@@ -1,6 +1,7 @@
 # encoding: utf-8
 require "logstash/codecs/base"
-require "logstash/codecs/line"
+require "logstash/util/charset"
+require "logstash/util/buftok"
 require "logstash/json"
 
 # This codec will decode streamed JSON that is newline delimited.
@@ -12,7 +13,6 @@ require "logstash/json"
 # Therefore this codec cannot work with line oriented inputs.
 class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
   config_name "json_lines"
-
 
   # The character encoding used in this codec. Examples include `UTF-8` and
   # `CP1252`
@@ -30,15 +30,15 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
 
   public
 
-  def initialize(params={})
-    super(params)
-    @lines = LogStash::Codecs::Line.new("delimiter" => @delimiter)
-    @lines.charset = @charset
+  def register
+    @buffer = FileWatch::BufferedTokenizer.new(@delimiter)
+    @converter = LogStash::Util::Charset.new(@charset)
+    @converter.logger = @logger
   end
 
   def decode(data)
-    @lines.decode(data) do |event|
-      yield guard(event, data)
+    @buffer.extract(data).each do |line|
+      yield guard(@converter.convert(line))
     end
   end # def decode
 
@@ -50,11 +50,11 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
 
   private
 
-  def guard(event, data)
+  def guard(data)
     begin
-      LogStash::Event.new(LogStash::Json.load(event["message"]))
+      LogStash::Event.new(LogStash::Json.load(data))
     rescue LogStash::Json::ParserError => e
-      LogStash::Event.new("message" => event["message"], "tags" => ["_jsonparsefailure"])
+      LogStash::Event.new("message" => data, "tags" => ["_jsonparsefailure"])
     end
   end
 
