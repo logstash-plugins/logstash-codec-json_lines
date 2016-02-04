@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require "logstash/codecs/json_lines"
 require "logstash/event"
 require "logstash/json"
