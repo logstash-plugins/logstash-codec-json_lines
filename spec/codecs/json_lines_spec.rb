@@ -6,9 +6,10 @@ require "logstash/json"
 require "insist"
 
 describe LogStash::Codecs::JSONLines do
-  subject do
-    next LogStash::Codecs::JSONLines.new
-  end
+
+  let(:codec_options) { {} }
+
+  shared_examples :codec do
 
   context "#decode" do
     it "should return an event from json data" do
@@ -37,9 +38,7 @@ describe LogStash::Codecs::JSONLines do
     context "when using custom delimiter" do
       let(:delimiter) { "|" }
       let(:line) { "{\"hey\":1}|{\"hey\":2}|{\"hey\":3}|" }
-      subject do
-        next LogStash::Codecs::JSONLines.new("delimiter" => delimiter)
-      end
+      let(:codec_options) { { "delimiter" => delimiter } }
 
       it "should decode multiple lines separated by the delimiter" do
         result = []
@@ -122,9 +121,7 @@ describe LogStash::Codecs::JSONLines do
 
     context "when using custom delimiter" do
       let(:delimiter) { "|" }
-      subject do
-        next LogStash::Codecs::JSONLines.new("delimiter" => delimiter)
-      end
+      let(:codec_options) { { "delimiter" => delimiter } }
 
       it "should decode multiple lines separated by the delimiter" do
         subject.on_event do |e, d|
@@ -168,6 +165,37 @@ describe LogStash::Codecs::JSONLines do
       expect(collector.size).to eq(2)
       expect(collector.first['field']).to eq('value1')
       expect(collector.last['field']).to eq('value2')
+    end
+  end
+
+  end
+
+  context "forcing legacy parsing" do
+    it_behaves_like :codec do
+      subject do
+        # register method is called in the constructor
+        LogStash::Codecs::JSONLines.new(codec_options)
+      end
+
+      before(:each) do
+        # stub codec parse method to force use of the legacy parser.
+        # this is very implementation specific but I am not sure how
+        # this can be tested otherwise.
+        allow(subject).to receive(:parse) do |line, &block|
+          subject.send(:legacy_parse, line, &block)
+        end
+      end
+    end
+  end
+
+  context "default parser choice" do
+    # here we cannot force the use of the Event#from_json since if this test is run in the
+    # legacy context (no Java Event) it will fail but if in the new context, it will be picked up.
+    it_behaves_like :codec do
+      subject do
+        # register method is called in the constructor
+        LogStash::Codecs::JSONLines.new(codec_options)
+      end
     end
   end
 end

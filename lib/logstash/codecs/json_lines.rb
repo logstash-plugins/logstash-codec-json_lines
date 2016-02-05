@@ -36,26 +36,34 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
     @converter.logger = @logger
   end
 
-  def decode(data)
+  def decode(data, &block)
     @buffer.extract(data).each do |line|
-      yield guard(@converter.convert(line))
+      parse(@converter.convert(line), &block)
     end
-  end # def decode
+  end
 
   def encode(event)
     # Tack on a @delimiter for now because previously most of logstash's JSON
     # outputs emitted one per line, and whitespace is OK in json.
     @on_event.call(event, "#{event.to_json}#{@delimiter}")
-  end # def encode
+  end
 
   private
 
-  def guard(data)
-    begin
-      LogStash::Event.new(LogStash::Json.load(data))
-    rescue LogStash::Json::ParserError => e
-      LogStash::Event.new("message" => data, "tags" => ["_jsonparsefailure"])
-    end
+  # from_json_parse uses the Event#from_json method to deserialize and directly produce events
+  def from_json_parse(json, &block)
+    LogStash::Event.from_json(json).each { |event| yield event }
+  rescue LogStash::Json::ParserError
+    yield LogStash::Event.new("message" => json, "tags" => ["_jsonparsefailure"])
   end
+
+  # legacy_parse uses the LogStash::Json class to deserialize json
+  def legacy_parse(json, &block)
+    yield LogStash::Event.new(LogStash::Json.load(json))
+  rescue LogStash::Json::ParserError
+    yield LogStash::Event.new("message" => json, "tags" => ["_jsonparsefailure"])
+  end
+
+  alias_method :parse, LogStash::Event.respond_to?(:from_json) ? :from_json_parse : :legacy_parse
 
 end # class LogStash::Codecs::JSONLines
