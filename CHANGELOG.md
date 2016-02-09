@@ -1,3 +1,6 @@
+## 2.1.0
+ - Backward compatible support for `Event#from_json` method https://github.com/logstash-plugins/logstash-codec-json_lines/pull/19
+
 ## 2.0.5
  - Directly use buftok to avoid indirection through the line codec https://github.com/logstash-plugins/logstash-codec-json_lines/pull/18
 
