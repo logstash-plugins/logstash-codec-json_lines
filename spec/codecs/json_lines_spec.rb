@@ -78,7 +78,6 @@ describe LogStash::Codecs::JSONLines do
     end
 
     context "when json could not be parsed" do
-
       let(:message)    { "random_message\n" }
 
       it "add the failure tag" do
@@ -98,8 +97,26 @@ describe LogStash::Codecs::JSONLines do
           expect(event['tags']).to include "_jsonparsefailure"
         end
       end
-
     end
+
+    context "blank lines" do
+      let(:collector) { Array.new }
+
+      it "should ignore bare blanks" do
+        subject.decode("\n\n") do |event|
+          collector.push(event)
+        end
+        expect(collector.size).to eq(0)
+      end
+
+      it "should ignore in between blank lines" do
+        subject.decode("\n{\"a\":1}\n\n{\"b\":2}\n\n") do |event|
+          collector.push(event)
+        end
+        expect(collector.size).to eq(2)
+      end
+    end
+
   end
 
   context "#encode" do

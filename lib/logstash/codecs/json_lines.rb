@@ -59,11 +59,14 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
 
   # legacy_parse uses the LogStash::Json class to deserialize json
   def legacy_parse(json, &block)
-    yield LogStash::Event.new(LogStash::Json.load(json))
+    # ignore empty/blank lines which LogStash::Json#load returns as nil
+    o = LogStash::Json.load(json)
+    yield(LogStash::Event.new(o)) if o
   rescue LogStash::Json::ParserError
     yield LogStash::Event.new("message" => json, "tags" => ["_jsonparsefailure"])
   end
 
+  # keep compatibility with all v2.x distributions. only in 2.3 will the Event#from_json method be introduced
+  # and we need to keep compatibility for all v2 releases.
   alias_method :parse, LogStash::Event.respond_to?(:from_json) ? :from_json_parse : :legacy_parse
-
-end # class LogStash::Codecs::JSONLines
+end
