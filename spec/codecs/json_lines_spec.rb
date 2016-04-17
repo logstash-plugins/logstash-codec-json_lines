@@ -120,16 +120,26 @@ describe LogStash::Codecs::JSONLines do
   end
 
   context "#encode" do
-    let(:data) { { LogStash::Event::TIMESTAMP => "2015-12-07T11:37:00.000Z", "foo" => "bar", "baz" => {"bah" => ["a","b","c"]}} }
-    let(:event) { LogStash::Event.new(data) }
+    let(:data) { { LogStash::Event::TIMESTAMP => "2015-12-07T11:37:00.000Z", "foo" => "bar", "baz" => {"bah" => ["a","b","c"]}, "@metadata" => {"metafield" => "metavalue"} } }
+    let(:event) { LogStash::Event.new(data.clone) }
 
     it "should return json data" do
       got_event = false
       subject.on_event do |e, d|
-        insist { d } == "#{LogStash::Event.new(data).to_json}\n"
+        insist { d } == "#{LogStash::Event.new(data.clone).to_json}\n"
         insist { LogStash::Json.load(d)["foo"] } == data["foo"]
         insist { LogStash::Json.load(d)["baz"] } == data["baz"]
         insist { LogStash::Json.load(d)["bah"] } == data["bah"]
+        got_event = true
+      end
+      subject.encode(event)
+      insist { got_event }
+    end
+
+    it "should not include metadata in the output" do
+      got_event = false
+      subject.on_event do |e, d|
+        insist { LogStash::Json.load(d).has_key? "@metadata" } == false
         got_event = true
       end
       subject.encode(event)
@@ -142,7 +152,19 @@ describe LogStash::Codecs::JSONLines do
 
       it "should decode multiple lines separated by the delimiter" do
         subject.on_event do |e, d|
-          insist { d } == "#{LogStash::Event.new(data).to_json}#{delimiter}"
+          insist { d } == "#{LogStash::Event.new(data.clone).to_json}#{delimiter}"
+        end
+        subject.encode(event)
+      end
+    end
+
+    context "when enabling metadata output" do
+      let(:codec_options) { { "metadata" => true } }
+
+      it "should include the @metadata field" do
+        subject.on_event do |e, d|
+          insist { d } == "#{LogStash::Json.dump(LogStash::Event.new(data.clone).to_hash_with_metadata)}\n"
+          insist { LogStash::Json.load(d)["@metadata"] } == data["@metadata"]
         end
         subject.encode(event)
       end
