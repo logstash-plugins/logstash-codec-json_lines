@@ -16,9 +16,9 @@ describe LogStash::Codecs::JSONLines do
       data = {"foo" => "bar", "baz" => {"bah" => ["a","b","c"]}}
       subject.decode(LogStash::Json.dump(data) + "\n") do |event|
         insist { event.is_a? LogStash::Event }
-        insist { event["foo"] } == data["foo"]
-        insist { event["baz"] } == data["baz"]
-        insist { event["bah"] } == data["bah"]
+        insist { event.get("foo") } == data["foo"]
+        insist { event.get("baz") } == data["baz"]
+        insist { event.get("bah") } == data["bah"]
       end
     end
 
@@ -29,9 +29,9 @@ describe LogStash::Codecs::JSONLines do
       end
       subject.decode("\n") do |event|
         insist { event.is_a? LogStash::Event }
-        insist { event["foo"] } == data["foo"]
-        insist { event["baz"] } == data["baz"]
-        insist { event["bah"] } == data["bah"]
+        insist { event.get("foo") } == data["foo"]
+        insist { event.get("baz") } == data["baz"]
+        insist { event.get("bah") } == data["bah"]
       end
     end
 
@@ -44,9 +44,9 @@ describe LogStash::Codecs::JSONLines do
         result = []
         subject.decode(line) { |event| result << event }
         expect(result.size).to eq(3)
-        expect(result[0]["hey"]).to eq(1)
-        expect(result[1]["hey"]).to eq(2)
-        expect(result[2]["hey"]).to eq(3)
+        expect(result[0].get("hey")).to eq(1)
+        expect(result[1].get("hey")).to eq(2)
+        expect(result[2].get("hey")).to eq(3)
       end
     end
 
@@ -56,8 +56,8 @@ describe LogStash::Codecs::JSONLines do
         subject.decode("something that isn't json\n") do |event|
           decoded = true
           insist { event.is_a?(LogStash::Event) }
-          insist { event["message"] } == "something that isn't json"
-          insist { event["tags"] }.include?("_jsonparsefailure")
+          insist { event.get("message") } == "something that isn't json"
+          insist { event.get("tags") }.include?("_jsonparsefailure")
         end
         insist { decoded } == true
       end
@@ -71,7 +71,7 @@ describe LogStash::Codecs::JSONLines do
         subject.decode("\n") do |event|
           decoded = true
           insist { event.is_a?(LogStash::Event) }
-          insist { event["message"].encoding.to_s } == "UTF-8"
+          insist { event.get("message").encoding.to_s } == "UTF-8"
         end
         insist { decoded } == true
       end
@@ -88,13 +88,13 @@ describe LogStash::Codecs::JSONLines do
 
       it "uses an array to store the tags" do
         subject.decode(message) do |event|
-          expect(event['tags']).to be_a Array
+          expect(event.get('tags')).to be_a Array
         end
       end
 
       it "add a json parser failure tag" do
         subject.decode(message) do |event|
-          expect(event['tags']).to include "_jsonparsefailure"
+          expect(event.get('tags')).to include "_jsonparsefailure"
         end
       end
     end
@@ -162,7 +162,7 @@ describe LogStash::Codecs::JSONLines do
         collector.push(event)
       end
       expect(collector.size).to eq(1)
-      expect(collector.first['field']).to eq('value1')
+      expect(collector.first.get('field')).to eq('value1')
     end
   end
 
@@ -180,8 +180,8 @@ describe LogStash::Codecs::JSONLines do
         collector.push(event)
       end
       expect(collector.size).to eq(2)
-      expect(collector.first['field']).to eq('value1')
-      expect(collector.last['field']).to eq('value2')
+      expect(collector.first.get('field')).to eq('value1')
+      expect(collector.last.get('field')).to eq('value2')
     end
   end
 
