@@ -52,7 +52,10 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
 
   # from_json_parse uses the Event#from_json method to deserialize and directly produce events
   def from_json_parse(json, &block)
-    LogStash::Event.from_json(json).each { |event| yield event }
+    LogStash::Event.from_json(json).each do |event|
+      raise LogStash::Json::ParserError if event.nil?
+      yield event
+    end
   rescue LogStash::Json::ParserError
     yield LogStash::Event.new("message" => json, "tags" => ["_jsonparsefailure"])
   end
@@ -60,7 +63,9 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
   # legacy_parse uses the LogStash::Json class to deserialize json
   def legacy_parse(json, &block)
     # ignore empty/blank lines which LogStash::Json#load returns as nil
+    # and handle top-level arrays as parser failure.
     o = LogStash::Json.load(json)
+    raise LogStash::Json::ParserError unless o.nil? || o.is_a?(Hash)
     yield(LogStash::Event.new(o)) if o
   rescue LogStash::Json::ParserError
     yield LogStash::Event.new("message" => json, "tags" => ["_jsonparsefailure"])

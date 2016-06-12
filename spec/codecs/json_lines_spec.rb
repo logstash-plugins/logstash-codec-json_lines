@@ -50,6 +50,19 @@ describe LogStash::Codecs::JSONLines do
       end
     end
 
+    context "when feeding a top-level array" do
+      it "falls back to plain text" do
+        decoded = false
+        subject.decode("[1,true,{\"a\":3}]\n") do |event|
+          decoded = true
+          insist { event.is_a?(LogStash::Event) }
+          insist { event.get("message") } == "[1,true,{\"a\":3}]"
+          insist { event.get("tags") }.include?("_jsonparsefailure")
+        end
+        insist { decoded } == true
+      end
+    end
+
     context "processing plain text" do
       it "falls back to plain text" do
         decoded = false
