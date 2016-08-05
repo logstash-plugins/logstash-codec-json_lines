@@ -1,3 +1,6 @@
+## 3.1.0
+  - Add decode_size_limit_bytes option to limit the maximum size of JSON document that can be parsed
+
 ## 3.0.2
   - Relax constraint on logstash-core-plugin-api to >= 1.60 <= 2.99
 
