@@ -1,3 +1,6 @@
+## 3.2.0
+  - Add decode_size_limit_bytes option to limit the maximum size of JSON document that can be parsed.[#35](https://github.com/logstash-plugins/logstash-codec-json_lines/pull/35)
+
 ## 3.1.0
   - Feat: event `target => namespace` support (ECS) [#41](https://github.com/logstash-plugins/logstash-codec-json_lines/pull/41)
   - Refactor: dropped support for old Logstash versions (< 6.0)
