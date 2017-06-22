@@ -117,6 +117,22 @@ describe LogStash::Codecs::JSONLines do
       end
     end
 
+    describe "decode_size_limits_bytes" do
+      let(:maximum_payload) { "a" * subject.decode_size_limit_bytes }
+
+      it "should not raise an error if the number of bytes is not exceeded" do
+        expect {
+          subject.decode(maximum_payload)
+        }.not_to raise_error
+      end
+      
+      it "should raise an error if the max bytes are exceeded" do
+        expect {
+          subject.decode(maximum_payload << "z")
+        }.to raise_error(RuntimeError, "input buffer full")
+      end
+    end
+
   end
 
   context "#encode" do
