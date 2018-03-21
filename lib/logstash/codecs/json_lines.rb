@@ -48,6 +48,13 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
     @on_event.call(event, "#{event.to_json}#{@delimiter}")
   end
 
+  def flush(&block)
+    remainder = @buffer.flush
+    if !remainder.empty?
+      parse(@converter.convert(remainder), &block)
+    end
+  end
+
   private
 
   # from_json_parse uses the Event#from_json method to deserialize and directly produce events

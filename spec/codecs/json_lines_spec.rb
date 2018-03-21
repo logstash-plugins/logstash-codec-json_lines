@@ -214,5 +214,24 @@ describe LogStash::Codecs::JSONLines do
         LogStash::Codecs::JSONLines.new(codec_options)
       end
     end
+
+    context "flush" do
+      subject do
+        LogStash::Codecs::JSONLines.new(codec_options)
+      end
+
+      let(:input) { "{\"foo\":\"bar\"}" }
+
+      it "should flush buffered data'" do
+        result = []
+        subject.decode(input) { |e| result << e }
+        expect(result.size).to eq(0)
+
+        subject.flush { |e| result << e }
+        expect(result.size).to eq(1)
+
+        expect(result[0].get("foo")).to eq("bar")
+      end
+    end
   end
 end
