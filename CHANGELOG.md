@@ -1,3 +1,6 @@
+## 3.0.6
+  - Support flush method, see https://github.com/logstash-plugins/logstash-codec-json_lines/pull/35
+
 ## 3.0.5
   - Update gemspec summary
 
