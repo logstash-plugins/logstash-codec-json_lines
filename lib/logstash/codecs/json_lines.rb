@@ -6,11 +6,17 @@ require "logstash/json"
 
 # This codec will decode streamed JSON that is newline delimited.
 # Encoding will emit a single JSON string ending in a `@delimiter`
+#
 # NOTE: Do not use this codec if your source input is line-oriented JSON, for
 # example, redis or file inputs. Rather, use the json codec.
+#
 # More info: This codec is expecting to receive a stream (string) of newline
 # terminated lines. The file input will produce a line string without a newline.
 # Therefore this codec cannot work with line oriented inputs.
+#
+# Exception:
+# If you set `input { http { codec => json_lines } }`, do not send with the header `Content-type: application/json`.
+# It will override the codec you set.
 class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
   config_name "json_lines"
 
