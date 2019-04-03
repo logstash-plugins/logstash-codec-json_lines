@@ -41,7 +41,7 @@ if [ "$ELASTIC_STACK_VERSION" ]; then
     fi
 
     docker-compose -f ci/unit/docker-compose.yml down
-    docker-compose -f ci/unit/docker-compose.yml build --no-cache
+    docker-compose -f ci/unit/docker-compose.yml build
     #docker-compose -f ci/unit/docker-compose.yml up --exit-code-from logstash --force-recreate
 else
     echo "Please set the ELASTIC_STACK_VERSION environment variable"
