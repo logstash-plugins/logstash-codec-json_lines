@@ -1,3 +1,6 @@
+## 3.1.0
+ - feature: Add 'metadata' option that enables inclusion of the @metadata field in the output.
+
 ## 3.0.6
   - Support flush method, see https://github.com/logstash-plugins/logstash-codec-json_lines/pull/35
 
