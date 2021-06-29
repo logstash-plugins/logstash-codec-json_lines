@@ -4,8 +4,9 @@ require "logstash/codecs/json_lines"
 require "logstash/event"
 require "logstash/json"
 require "insist"
+require 'logstash/plugin_mixins/ecs_compatibility_support/spec_helper'
 
-describe LogStash::Codecs::JSONLines do
+describe LogStash::Codecs::JSONLines, :ecs_compatibility_support do
 
   let(:codec_options) { {} }
 
@@ -185,29 +186,40 @@ describe LogStash::Codecs::JSONLines do
     end
   end
 
-  end
+  ecs_compatibility_matrix(:disabled, :v1, :v8 => :v1) do
 
-  context "forcing legacy parsing" do
-    it_behaves_like :codec do
-      subject do
-        # register method is called in the constructor
-        LogStash::Codecs::JSONLines.new(codec_options)
+    before(:each) do
+      allow_any_instance_of(described_class).to receive(:ecs_compatibility).and_return(ecs_compatibility)
+    end
+
+    context 'with target' do
+      let(:input) do
+        %{{"field": "value1"}
+{"field": 2.0}
+}
       end
 
-      before(:each) do
-        # stub codec parse method to force use of the legacy parser.
-        # this is very implementation specific but I am not sure how
-        # this can be tested otherwise.
-        allow(subject).to receive(:parse) do |line, &block|
-          subject.send(:legacy_parse, line, &block)
+      let(:codec_options) { super().merge "target" => 'foo' }
+
+      let(:collector) { Array.new }
+
+      it 'should generate two events' do
+        subject.decode(input) do |event|
+          collector.push(event)
         end
+        expect(collector.size).to eq(2)
+        expect(collector[0].include?('field')).to be false
+        expect(collector[0].get('foo')).to eql 'field' => 'value1'
+        expect(collector[1].include?('field')).to be false
+        expect(collector[1].get('foo')).to eql 'field' => 2.0
       end
     end
+
+  end
+
   end
 
   context "default parser choice" do
-    # here we cannot force the use of the Event#from_json since if this test is run in the
-    # legacy context (no Java Event) it will fail but if in the new context, it will be picked up.
     it_behaves_like :codec do
       subject do
         # register method is called in the constructor
