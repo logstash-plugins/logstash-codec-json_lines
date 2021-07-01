@@ -3,6 +3,11 @@ require "logstash/codecs/base"
 require "logstash/util/charset"
 require "logstash/util/buftok"
 require "logstash/json"
+require 'logstash/plugin_mixins/ecs_compatibility_support'
+require 'logstash/plugin_mixins/ecs_compatibility_support/target_check'
+require 'logstash/plugin_mixins/validator_support/field_reference_validation_adapter'
+require 'logstash/plugin_mixins/event_support/event_factory_adapter'
+require 'logstash/plugin_mixins/event_support/from_json_helper'
 
 # This codec will decode streamed JSON that is newline delimited.
 # Encoding will emit a single JSON string ending in a `@delimiter`
@@ -12,6 +17,15 @@ require "logstash/json"
 # terminated lines. The file input will produce a line string without a newline.
 # Therefore this codec cannot work with line oriented inputs.
 class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
+
+  include LogStash::PluginMixins::ECSCompatibilitySupport
+  include LogStash::PluginMixins::ECSCompatibilitySupport::TargetCheck
+
+  extend LogStash::PluginMixins::ValidatorSupport::FieldReferenceValidationAdapter
+
+  include LogStash::PluginMixins::EventSupport::EventFactoryAdapter
+  include LogStash::PluginMixins::EventSupport::FromJsonHelper
+
   config_name "json_lines"
 
   # The character encoding used in this codec. Examples include `UTF-8` and
@@ -28,6 +42,11 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
   # Change the delimiter that separates lines
   config :delimiter, :validate => :string, :default => "\n"
 
+  # Defines a target field for placing decoded fields.
+  # If this setting is omitted, data gets stored at the root (top level) of the event.
+  # The target is only relevant while decoding data into a new event.
+  config :target, :validate => :field_reference
+
   public
 
   def register
@@ -38,7 +57,7 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
 
   def decode(data, &block)
     @buffer.extract(data).each do |line|
-      parse(@converter.convert(line), &block)
+      parse_json(@converter.convert(line), &block)
     end
   end
 
@@ -51,31 +70,21 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
   def flush(&block)
     remainder = @buffer.flush
     if !remainder.empty?
-      parse(@converter.convert(remainder), &block)
+      parse_json(@converter.convert(remainder), &block)
     end
   end
 
   private
 
-  # from_json_parse uses the Event#from_json method to deserialize and directly produce events
-  def from_json_parse(json, &block)
-    LogStash::Event.from_json(json).each { |event| yield event }
-  rescue LogStash::Json::ParserError => e
-    @logger.warn("JSON parse error, original data now in message field", :error => e, :data => json)
-    yield LogStash::Event.new("message" => json, "tags" => ["_jsonparsefailure"])
+  def parse_json(json)
+    events_from_json(json, targeted_event_factory).each { |event| yield event }
+  rescue => e
+    @logger.warn("JSON parse error, original data now in message field", message: e.message, exception: e.class, data: json)
+    yield parse_json_error_event(json)
   end
 
-  # legacy_parse uses the LogStash::Json class to deserialize json
-  def legacy_parse(json, &block)
-    # ignore empty/blank lines which LogStash::Json#load returns as nil
-    o = LogStash::Json.load(json)
-    yield(LogStash::Event.new(o)) if o
-  rescue LogStash::Json::ParserError => e
-    @logger.warn("JSON parse error, original data now in message field", :error => e, :data => json)
-    yield LogStash::Event.new("message" => json, "tags" => ["_jsonparsefailure"])
+  def parse_json_error_event(json)
+    event_factory.new_event("message" => json, "tags" => ["_jsonparsefailure"])
   end
 
-  # keep compatibility with all v2.x distributions. only in 2.3 will the Event#from_json method be introduced
-  # and we need to keep compatibility for all v2 releases.
-  alias_method :parse, LogStash::Event.respond_to?(:from_json) ? :from_json_parse : :legacy_parse
 end

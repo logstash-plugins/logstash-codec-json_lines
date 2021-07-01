@@ -1,3 +1,7 @@
+## 3.1.0
+  - Feat: event `target => namespace` support (ECS) [#41](https://github.com/logstash-plugins/logstash-codec-json_lines/pull/41)
+  - Refactor: dropped support for old Logstash versions (< 6.0)
+
 ## 3.0.6
   - Support flush method, see https://github.com/logstash-plugins/logstash-codec-json_lines/pull/35
 
