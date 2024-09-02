@@ -130,6 +130,13 @@ describe LogStash::Codecs::JSONLines, :ecs_compatibility_support do
 
       it "should raise an error if the max bytes are exceeded" do
         subject.decode(maximum_payload << "z") do |event|
+          expect(event.get("tags")).to include("_jsonparsetoobigfailure")
+          expect(event.get("message").size).to eq(decode_size_limit_bytes)
+        end
+      end
+
+      it "should raise an error if the max bytes are exceeded" do
+        subject.decode(maximum_payload << "z") do |event|
           expect(event.get("tags")).to include("_jsonparse_too_big_failure")
           expect(event.get("message").size).to eq(decode_size_limit_bytes)
         end
