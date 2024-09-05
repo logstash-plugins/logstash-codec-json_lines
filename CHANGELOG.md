@@ -1,3 +1,6 @@
+## 3.2.1
+  - Raise the default value of `decode_size_limit_bytes` up to 512 MB. [#46](https://github.com/logstash-plugins/logstash-codec-json_lines/pull/46)
+
 ## 3.2.0
   - Add decode_size_limit_bytes option to limit the maximum size of each JSON line that can be parsed.[#43](https://github.com/logstash-plugins/logstash-codec-json_lines/pull/43)
 

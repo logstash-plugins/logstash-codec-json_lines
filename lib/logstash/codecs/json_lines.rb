@@ -43,9 +43,9 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
   config :delimiter, :validate => :string, :default => "\n"
 
   # Maximum number of bytes for a single line before a fatal exception is raised
-  # which will stop Logsash.
-  # The default is 20MB which is quite large for a JSON document
-  config :decode_size_limit_bytes, :validate => :number, :default => 20 * (1024 * 1024) # 20MB
+  # which will stop Logstash.
+  # The default is 512MB which is quite large for a JSON document
+  config :decode_size_limit_bytes, :validate => :number, :default => 512 * (1024 * 1024) # 512MB
 
   # Defines a target field for placing decoded fields.
   # If this setting is omitted, data gets stored at the root (top level) of the event.
@@ -55,6 +55,7 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
   public
 
   def register
+    deprecation_logger.deprecated "512Mb default value for `decode_size_limit_bytes` setting is going to be decreased to lower value in a future version. Set a reasonable value compatible with your lines size."
     @buffer = FileWatch::BufferedTokenizer.new(@delimiter, @decode_size_limit_bytes)
     @converter = LogStash::Util::Charset.new(@charset)
     @converter.logger = @logger
