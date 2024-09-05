@@ -119,6 +119,7 @@ describe LogStash::Codecs::JSONLines, :ecs_compatibility_support do
     end
 
     describe "decode_size_limits_bytes" do
+      let(:codec_options) { { "decode_size_limit_bytes" => 20 * 1024 * 1024 } } # lower the default to avoid OOM errors in tests
       let(:maximum_payload) { "a" * subject.decode_size_limit_bytes }
 
       it "should not raise an error if the number of bytes is not exceeded" do
