@@ -1,5 +1,5 @@
 ## 3.2.2
-  - Fix: updated the way to check if the `decode_size_limit_bytes` has been explicitly customized. [#47](https://github.com/logstash-plugins/logstash-codec-json_lines/pull/47)
+  - Fix: updated the way to check if the `decode_size_limit_bytes` has been explicitly customised. [#47](https://github.com/logstash-plugins/logstash-codec-json_lines/pull/47)
 
 ## 3.2.1
   - Raise the default value of `decode_size_limit_bytes` up to 512 MB. [#46](https://github.com/logstash-plugins/logstash-codec-json_lines/pull/46)
