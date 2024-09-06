@@ -57,7 +57,7 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
   public
 
   def register
-    if decode_size_limit_bytes == DEFAULT_DECODE_SIZE_LIMIT_BYTES
+    if original_params['decode_size_limit_bytes'].nil?
       deprecation_logger.deprecated "The default value for `decode_size_limit_bytes`, currently at 512Mb, will be lowered in a future version to prevent Out of Memory errors from abnormally large messages or missing delimiters. Please set a value that reflects the largest expected message size (e.g. 20971520 for 20Mb)"
     end
     @buffer = FileWatch::BufferedTokenizer.new(@delimiter, @decode_size_limit_bytes)
