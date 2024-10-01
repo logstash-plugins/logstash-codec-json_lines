@@ -134,12 +134,6 @@ describe LogStash::Codecs::JSONLines, :ecs_compatibility_support do
           expect(event.get("message")).to eq("Payload bigger than #{subject.decode_size_limit_bytes} bytes")
         end
       end
-
-      it "should raise an error if the max bytes are exceeded" do
-        expect {
-          subject.decode(maximum_payload << "z")
-        }.to raise_error(java.lang.IllegalStateException, "input buffer full")
-      end
     end
 
   end

@@ -61,7 +61,6 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
       deprecation_logger.deprecated "The default value for `decode_size_limit_bytes`, currently at 512MB, will be lowered in a future version to prevent Out of Memory errors from abnormally large messages or missing delimiters. Please set a value that reflects the largest expected message size (e.g. 20971520 for 20MB)"
     end
     @buffer = FileWatch::BufferedTokenizer.new(@delimiter, @decode_size_limit_bytes)
-    puts "DNADBG>> delimiter is [#{@delimiter}]"
     @converter = LogStash::Util::Charset.new(@charset)
     @converter.logger = @logger
   end
