@@ -1,3 +1,6 @@
+## 3.2.3
+  - Update behaviour of `decode_size_limit_bytes` to do not apply any limitation to the length of a line, eventually tagging the event if it's set. [#45](https://github.com/logstash-plugins/logstash-codec-json_lines/pull/45)
+
 ## 3.2.2
   - Fix: updated the way to check if the `decode_size_limit_bytes` has been explicitly customised. [#47](https://github.com/logstash-plugins/logstash-codec-json_lines/pull/47)
 
