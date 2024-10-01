@@ -61,6 +61,7 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
       deprecation_logger.deprecated "The default value for `decode_size_limit_bytes`, currently at 512MB, will be lowered in a future version to prevent Out of Memory errors from abnormally large messages or missing delimiters. Please set a value that reflects the largest expected message size (e.g. 20971520 for 20MB)"
     end
     @buffer = FileWatch::BufferedTokenizer.new(@delimiter, @decode_size_limit_bytes)
+    puts "DNADBG>> delimiter is [#{@delimiter}]"
     @converter = LogStash::Util::Charset.new(@charset)
     @converter.logger = @logger
   end
@@ -71,7 +72,7 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
     end
   rescue java.lang.IllegalStateException => e
     if e.message == "input buffer full" && @decode_size_limit_bytes != "none"
-      yield event_factory.new_event("message" => data[0..@decode_size_limit_bytes.to_i - 1], "tags" => ["_jsonparsetoobigfailure"]) #TODO check the failure tag
+      yield event_factory.new_event("message" => "Payload bigger than #{@decode_size_limit_bytes} bytes", "tags" => ["_jsonparsetoobigfailure"])
     else
       # re-raise the error if doesn't correspond to the buffer overflow condition
       raise e
