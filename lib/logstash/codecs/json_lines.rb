@@ -70,7 +70,7 @@ class LogStash::Codecs::JSONLines < LogStash::Codecs::Base
       parse_json(@converter.convert(line), &block)
     end
   rescue java.lang.IllegalStateException => e
-    if e.message == "input buffer full" && @decode_size_limit_bytes != "none"
+    if /^input buffer full/ =~ e.message && @decode_size_limit_bytes != "none"
       yield event_factory.new_event("message" => "Payload bigger than #{@decode_size_limit_bytes} bytes", "tags" => ["_jsonparsetoobigfailure"])
     else
       # re-raise the error if doesn't correspond to the buffer overflow condition
